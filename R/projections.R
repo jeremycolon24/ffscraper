@@ -16,7 +16,7 @@
 #' @export
 getTeamProjections <- function(league_link, scores_link, week) {
     num_teams <- nrow(getTeams(league_link))
-    scores <- rvest::read_html(paste0(scores_link, "?week=", week))
+    scores <- xml2::read_html(paste0(scores_link, "?week=", week))
     teams <- scores %>% rvest::html_nodes(".league-name") %>% rvest::html_text()
     teams <- teams[1:num_teams]
     projs <- scores %>% rvest::html_nodes(".points-projected") %>% rvest::html_text() %>% as.numeric()
@@ -55,10 +55,10 @@ getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7,
     playerInjuries <- data.frame(name = character(), injury = character())
     page_offset <- 0
     for (i in 1:nrow(positions)) {
-        players <- rvest::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
+        players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
         playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
         while (length(playerNames) > 0) {
-            players <- rvest::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
+            players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
             playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
             playerPos <- players %>% rvest::html_nodes(".position") %>% rvest::html_text()
             playerTeam <- players %>% rvest::html_nodes(".player-team") %>% rvest::html_text()

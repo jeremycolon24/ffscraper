@@ -26,7 +26,7 @@ getLinks <- function(leagueID) {
 #' @export
 getTeams <- function(link) {
     # Get HTML
-    teams <- rvest::read_html(link)
+    teams <- xml2::read_html(link)
     team_names <- teams %>% rvest::html_nodes(".league-name") %>% rvest::html_text()
     team_ids <- teams %>% rvest::html_nodes(".league-name a") %>% rvest::html_attr("href") %>% stringr::str_extract("\\d+$")
     return(data.frame(teamID = team_ids, teamName = team_names))
