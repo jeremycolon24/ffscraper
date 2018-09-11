@@ -1,7 +1,7 @@
 Package: ffscraper
 Type: Package
 Title: Fleaflicker Site Scraper
-Version: 0.1.0
+Version: 0.0.0.9001
 Authors@R: person("Jeremy", "Colón", email = "jeremycolon24@gmail.com",role = c("aut", "cre"))
 Description: Scrapes the Fleaflicker website for team and player data.
     Currently only scrapes player projections and team projections, 
