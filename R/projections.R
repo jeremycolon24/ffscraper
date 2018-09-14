@@ -5,24 +5,6 @@
 #     instead of actual points
 #
 
-#' Get Projected Team Scores
-#'
-#' @param league_link Web link to main league page
-#' @param scores_link Web link to "scores" page.
-#' @param week Week Number
-#' @return Teams and projected total score.
-#' @examples
-#' getTeamProjections(league_link, scores_link, 1)
-#' @export
-getTeamProjections <- function(league_link, scores_link, week) {
-    num_teams <- nrow(getTeams(league_link))
-    scores <- rvest::read_html(paste0(scores_link, "?week=", week))
-    teams <- scores %>% rvest::html_nodes(".league-name") %>% rvest::html_text()
-    teams <- teams[1:num_teams]
-    projs <- scores %>% rvest::html_nodes(".points-projected") %>% rvest::html_text() %>% as.numeric()
-    return(data.frame(week = week, teamName = teams, projectedScore = projs))
-}
-
 #' Get Projected Player Scores
 #'
 #' @param plaers_link Web link to main league page
@@ -55,10 +37,10 @@ getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7,
     playerInjuries <- data.frame(name = character(), injury = character())
     page_offset <- 0
     for (i in 1:nrow(positions)) {
-        players <- rvest::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
+        players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
         playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
         while (length(playerNames) > 0) {
-            players <- rvest::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
+            players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
             playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
             playerPos <- players %>% rvest::html_nodes(".position") %>% rvest::html_text()
             playerTeam <- players %>% rvest::html_nodes(".player-team") %>% rvest::html_text()
@@ -66,12 +48,16 @@ getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7,
             playerOpp <- players %>% rvest::html_nodes(".pro-opp-matchup") %>% rvest::html_text()
             playerOpp <- playerOpp[-1]
             playerOpp <- stringr::str_remove(playerOpp, playerGameTime)
-            playerProj <- players %>% rvest::html_nodes(".points-projected") %>% rvest::html_text()
+            if(length(players %>% rvest::html_nodes(".points-projected-live") %>% rvest::html_text()) > 0) {
+              playerProj <- players %>% rvest::html_nodes(".points-projected-live") %>% rvest::html_text()
+            } else {
+              playerProj <- players %>% rvest::html_nodes(".points-projected") %>% rvest::html_text()
+            }
             playerPercOwn <- players %>% rvest::html_nodes(".progress-bar") %>% rvest::html_text()
             playerInjury <- players %>% rvest::html_nodes(".player-name") %>% rvest::html_children() %>% rvest::html_text()
             if (length(playerInjury > 1)) {
                 for (j in 1:(length(playerInjury) - 1)) {
-                  if (playerInjury[j] %in% c("Q", "D", "OUT")) {
+                  if (playerInjury[j] %in% c("Q", "D", "OUT", "IR")) {
                     playerInjuries <- rbind(playerInjuries, data.frame(name = playerInjury[j + 1], injury = playerInjury[j]))
                   }
                 }
@@ -82,7 +68,7 @@ getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7,
         }
         page_offset <- 0
     }
-    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(week = weeks, gameday = stringr::str_extract(gametime, "^[A-Za-z]{3}"), gametime = stringr::str_extract(gametime,
+    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(week = week, gameday = stringr::str_extract(gametime, "^[A-Za-z]{3}"), gametime = stringr::str_extract(gametime,
         "\\d+:\\d+ [PAM]+")) %>% dplyr::select(week, name, position, team, opponent, gameday, gametime, percent_owned, injury, projection))
     return(playerData)
 }
