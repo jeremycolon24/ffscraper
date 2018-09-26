@@ -27,10 +27,11 @@ getLinks <- function(leagueID) {
 getTeams <- function(link) {
     # Get HTML
     teams <- xml2::read_html(link)
+    team_owners <- teams %>% rvest::html_nodes(".user-name") %>% rvest::html_text()
     team_names <- teams %>% rvest::html_nodes(".league-name") %>% rvest::html_text()
     team_links <- teams %>% rvest::html_nodes(".league-name a") %>% rvest::html_attr("href")
     team_ids <- teams %>% rvest::html_nodes(".league-name a") %>% rvest::html_attr("href") %>% stringr::str_extract("\\d+$")
-    return(data.frame(teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com/',team_links), teamName = team_names))
+    return(data.frame(teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com/',team_links), teamName = team_names))
 }
 
 getRosters <- function(teams, week) {
