@@ -11,10 +11,10 @@
 #' @examples
 #' getLinks(123456)
 #' @export
-getLinks <- function(leagueID) {
-    league_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID)
-    scores_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/scores")
-    players_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/players")
+getLinks <- function(leagueID, season) {
+    league_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID,'?season=',season)
+    scores_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/scores",'?season=',season)
+    players_link <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/players",'?season=',season)
 }
 
 #' Get teams from main league page
@@ -24,9 +24,9 @@ getLinks <- function(leagueID) {
 #' @examples
 #' getTeams(123456)
 #' @export
-getTeams <- function(link) {
+getTeams <- function(league_link) {
     # Get HTML
-    teams <- xml2::read_html(link)
+    teams <- xml2::read_html(league_link)
     team_owners <- teams %>% rvest::html_nodes(".user-name") %>% rvest::html_text()
     team_names <- teams %>% rvest::html_nodes(".league-name") %>% rvest::html_text()
     team_owners <- team_owners[1:length(team_names)]
