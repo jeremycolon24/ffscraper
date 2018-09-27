@@ -32,7 +32,8 @@ getTeams <- function(league_link) {
     team_owners <- team_owners[1:length(team_names)]
     team_links <- teams %>% rvest::html_nodes(".league-name a") %>% rvest::html_attr("href")
     team_ids <- teams %>% rvest::html_nodes(".league-name a") %>% rvest::html_attr("href") %>% stringr::str_extract("teams[/]\\d+") %>% stringr::str_extract("\\d+")
-    return(data.frame(teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com',team_links), teamName = team_names))
+    season <- team_links %>% stringr::str_extract('\\d+$') %>% as.integer()
+    return(data.frame(season = season, teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com',team_links), teamName = team_names))
 }
 
 getRosters <- function(teams, week) {
@@ -40,13 +41,13 @@ getRosters <- function(teams, week) {
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     teamLink <- as.character(teams[i, "teamLink"])
-    roster <- xml2::read_html(paste0(teamLink,'?week=',week))
+    roster <- xml2::read_html(paste0(teamLink,'&week=',week))
     player_tr <- roster %>% rvest::html_nodes("tr")
     player_tr <- player_tr[c(3:12,15:length(player_tr))]
     for(j in 1:length(player_tr)){
       playerNames <- player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
       if(length(playerNames)){
-        playerLinks <- paste0('https://www.fleaflicker.com/',player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_attr("href"))
+        playerLinks <- paste0('https://www.fleaflicker.com',player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_attr("href"))
         rosters <- rbind(rosters, data.frame(week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, starter = ifelse(j <= 10,"yes","no")))
       }
     }

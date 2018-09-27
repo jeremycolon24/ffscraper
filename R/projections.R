@@ -1,13 +1,14 @@
 # Projections
 #
 # A set of functions that pull projections.
-# They need to be run before the start of games to pull projections
-#     instead of actual points
+# Note: Projections can NOT be retrieved historically.
+#     Fleaflicker does not keep that data.
+#     Projections must be retrieved during the week that you want projections for
 #
 
 #' Get Projected Player Scores
 #'
-#' @param plaers_link Web link to main league page
+#' @param players_link Web link to main league page
 #' @param week Week Number
 #' @param statType The statistic that is shown on the page - defaults to projection.
 #' @param sortType The statistic to sort on - defaults to projection
@@ -19,6 +20,7 @@
 #' getPlayerProjections(players_link, 1, 7, 7, FALSE, c('QB','K'))
 #' @export
 getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7, FA_only = TRUE, position = "ALL") {
+    players_link <- stringr::str_remove(players_link,'[?]season=\\d+')
     position <- stringr::str_to_upper(position)
     positions <- data.frame(id = c(4, 1, 2, 8, 11, 16, 256), pos = c("QB", "RB", "WR", "TE", "FLEX", "K", "D/ST"))
     if (!position %in% positions$pos & position != "ALL") {
