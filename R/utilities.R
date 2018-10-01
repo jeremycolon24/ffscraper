@@ -46,7 +46,8 @@ getRosters <- function(teams, week) {
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     teamLink <- as.character(teams[i, "teamLink"])
-    roster <- xml2::read_html(paste0(teamLink,'&week=',week))
+    teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?week=',week))
+    roster <- xml2::read_html(teamLink)
     player_tr <- roster %>% rvest::html_nodes("tr")
     player_tr <- player_tr[c(3:12,15:length(player_tr))]
     for(j in 1:length(player_tr)){
