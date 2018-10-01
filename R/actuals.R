@@ -18,10 +18,10 @@ getAllPlayerPoints <- function(playersLink, week, statType = 2, sortType = 2, FA
         stop("Not a valid position. Please choose from the following: 'QB','RB','WR','TE','FLEX','K','D/ST','ALL'")
     }
     if (position == "ALL") {
-        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(players_link, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(playersLink, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     } else {
-        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(players_link, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(playersLink, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     }
 
