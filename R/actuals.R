@@ -26,7 +26,7 @@ getAllPlayerPoints <- function(playersLink, week, statType = 2, sortType = 2, FA
     }
 
     playerData <- data.frame(season = numeric(), week = numeric(), name = character(), position = character(), team = character(), points = numeric())
-    season <- players_link %>% stringr::str_extract('\\d+$') %>% as.integer()
+    season <- playersLink %>% stringr::str_extract('\\d+$') %>% as.integer()
     page_offset <- 0
     for (i in 1:nrow(positions)) {
         players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
