@@ -11,7 +11,7 @@
 #' @examples
 #' getPlayerPoints(teams, 1)
 #' @export
-getAllPlayerPoints <- function(players_link, week, statType = 2, sortType = 2, FA_only = TRUE, position = "ALL") {
+getAllPlayerPoints <- function(playersLink, week, statType = 2, sortType = 2, FA_only = TRUE, position = "ALL") {
     position <- stringr::str_to_upper(position)
     positions <- data.frame(id = c(4, 1, 2, 8, 11, 16, 256), pos = c("QB", "RB", "WR", "TE", "FLEX", "K", "D/ST"))
     if (!position %in% positions$pos & position != "ALL") {

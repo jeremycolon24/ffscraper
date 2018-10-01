@@ -8,7 +8,7 @@
 
 #' Get Projected Player Scores
 #'
-#' @param players_link Web link to main league page
+#' @param playersLink Web link to main league page
 #' @param week Week Number
 #' @param statType The statistic that is shown on the page - defaults to projection.
 #' @param sortType The statistic to sort on - defaults to projection
@@ -16,21 +16,21 @@
 #' @param position Player position to get projections for - defaults to ALL
 #' @return Teams and projected total score.
 #' @examples
-#' getPlayerProjections(players_link, 1, 7, 7, TRUE, 'QB')
-#' getPlayerProjections(players_link, 1, 7, 7, FALSE, c('QB','K'))
+#' getPlayerProjections(playersLink, 1, 7, 7, TRUE, 'QB')
+#' getPlayerProjections(playersLink, 1, 7, 7, FALSE, c('QB','K'))
 #' @export
-getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7, FA_only = TRUE, position = "ALL") {
-    players_link <- stringr::str_remove(players_link,'[?]season=\\d+')
+getPlayerProjections <- function(playersLink, week, statType = 7, sortType = 7, FA_only = TRUE, position = "ALL") {
+    playersLink <- stringr::str_remove(playersLink,'[?]season=\\d+')
     position <- stringr::str_to_upper(position)
     positions <- data.frame(id = c(4, 1, 2, 8, 11, 16, 256), pos = c("QB", "RB", "WR", "TE", "FLEX", "K", "D/ST"))
     if (!position %in% positions$pos & position != "ALL") {
         stop("Not a valid position. Please choose from the following: 'QB','RB','WR','TE','FLEX','K','D/ST','ALL'")
     }
     if (position == "ALL") {
-        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(players_link, "?week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(playersLink, "?week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     } else {
-        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(players_link, "?week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(playersLink, "?week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     }
 
@@ -59,7 +59,7 @@ getPlayerProjections <- function(players_link, week, statType = 7, sortType = 7,
             playerInjury <- players %>% rvest::html_nodes(".player-name") %>% rvest::html_children() %>% rvest::html_text()
             if (length(playerInjury > 1)) {
                 for (j in 1:(length(playerInjury) - 1)) {
-                  if (playerInjury[j] %in% c("Q", "D", "OUT", "IR")) {
+                  if (playerInjury[j] %in% c("Q", "D", "OUT", "IR", "SUS")) {
                     playerInjuries <- rbind(playerInjuries, data.frame(name = playerInjury[j + 1], injury = playerInjury[j]))
                   }
                 }
