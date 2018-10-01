@@ -87,17 +87,17 @@ getTrades <- function(transLogLink, leagueLink, team = 'ALL'){
   teams <- ffscraper::getTeams(leagueLink)
   if(team != "ALL" & !(team %in% teams['teamID'])){
     stop("Not a valid team ID. Use getTeams function to see your League's team IDs")
-  } else if (team == "ALL") {
-    team <- as.character(teams$teamID)
-  } else {
-    TRUE
   }
 
   tradeData <- data.frame(tradeID = integer(), transactionDate = character(), fromTeam = integer(), assetName = character(), toTeam = integer(), tradeLink = character())
 
   for(i in 1:length(team)) {
     tableOffset <- 0
-    tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
+    if(team == "ALL"){
+      tradesLink <- paste0(transLogLink,"?transactionType=TRADE&tableOffset=",tableOffset)
+    } else {
+      tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
+    }
     transactions <- xml2::read_html(tradesLink)
     transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
 
@@ -123,7 +123,11 @@ getTrades <- function(transLogLink, leagueLink, team = 'ALL'){
       tradeData <- rbind(tradeData, data.frame(tradeID, transactionDate, fromTeam, assetName, toTeam, tradeLink))
 
       tableOffset <- tableOffset + 15
-      tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
+      if(team == "ALL"){
+        tradesLink <- paste0(transLogLink,"?transactionType=TRADE&tableOffset=",tableOffset)
+      } else {
+        tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
+      }
       transactions <- xml2::read_html(tradesLink)
       transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
 
