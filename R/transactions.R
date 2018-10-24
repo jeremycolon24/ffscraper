@@ -134,7 +134,7 @@ getTrades <- function(transLogLink, leagueLink, team = 'ALL'){
     }
   }
 
-  return(tradeData)
+  return(distinct(tradeData))
 }
 
 
