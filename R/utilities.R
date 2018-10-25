@@ -13,10 +13,11 @@
 #' @export
 getLinks <- function(leagueID, season) {
     leagueLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID,'?season=',season)
-    scoresLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/scores",'?season=',season)
-    playersLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/players",'?season=',season)
+    scoresLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/scores?season=",season)
+    playersLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/players?season=",season)
     transLogLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/transactions")
     tradesLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/trades")
+    matchupsLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/",leagueID, "/scores?season=",season)
 }
 
 #' Get teams from main league page
