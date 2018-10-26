@@ -13,7 +13,7 @@
 #' @export
 #'
 getMatchups <- function(matchupsLink, week) {
-
+  season <- matchupsLink %>% stringr::str_extract("\\d+$")
   matchupsLinkParam <- paste0(matchupsLink,"&week=",week)
   matchups <- xml2::read_html(matchupsLinkParam)
 
@@ -28,16 +28,17 @@ getMatchups <- function(matchupsLink, week) {
   scoreLinks <- links[grepl('scores',links)] %>% stringr::str_remove("/plays$")
   points <- matchups %>% rvest::html_nodes(".table-group .text-right") %>% rvest::html_text() %>% stringr::str_remove_all("Points")
   points <- points[points != ""]
-  scores <- data.frame(week = week, teamName = teams, teamID = teamIDs, scoreLink = scoreLinks, points = as.numeric(points))
+  scores <- data.frame(season = season, week = week, teamName = teams, teamID = teamIDs, scoreLink = scoreLinks, points = as.numeric(points))
   scores['idx'] <- as.integer(row.names(scores))
   scores <- scores %>% filter(idx%%2 == 0) %>%
     inner_join(scores %>% filter(idx%%2 == 1), by = "scoreLink") %>%
-    mutate(winning_team = dplyr::if_else(points.x > points.y, teamID.x, teamID.y),
-           losing_team = dplyr::if_else(points.x > points.y, teamID.y, teamID.x),
-           winning_points = dplyr::if_else(points.x > points.y, points.x, points.y),
-           losing_points = dplyr::if_else(points.x > points.y, points.y, points.x),
-           scoreLink = paste0("https://www.fleaflicker.com",scoreLink)) %>%
-    select(week.x, winning_team, winning_points, losing_team, losing_points, scoreLink) %>%
+    mutate(winningTeam = dplyr::if_else(points.x > points.y, teamID.x, teamID.y),
+           losingTeam = dplyr::if_else(points.x > points.y, teamID.y, teamID.x),
+           winningPoints = dplyr::if_else(points.x > points.y, points.x, points.y),
+           losingPoints = dplyr::if_else(points.x > points.y, points.y, points.x),
+           scoreLink = paste0("https://www.fleaflicker.com",scoreLink),
+           season = season) %>%
+    select(season, week.x, winningTeam, winningPoints, losingTeam, losingPoints, scoreLink) %>%
     dplyr::rename(week = week.x)
 
   return(scores)
