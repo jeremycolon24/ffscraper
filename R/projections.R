@@ -57,7 +57,7 @@ getPlayerProjections <- function(playersLink, week, statType = 7, sortType = 7, 
             }
             playerPercOwn <- players %>% rvest::html_nodes(".progress-bar") %>% rvest::html_text()
             playerInjury <- players %>% rvest::html_nodes(".player-name") %>% rvest::html_children() %>% rvest::html_text()
-            if (length(playerInjury > 1)) {
+            if (length(playerInjury) > 1) {
                 for (j in 1:(length(playerInjury) - 1)) {
                   if (playerInjury[j] %in% c("Q", "D", "OUT", "IR", "SUS")) {
                     playerInjuries <- rbind(playerInjuries, data.frame(name = playerInjury[j + 1], injury = playerInjury[j]))
