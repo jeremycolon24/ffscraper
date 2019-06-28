@@ -114,8 +114,8 @@ getTrades <- function(transLogLink, leagueLink, team = 'ALL'){
         TRUE ~ 1
       )
       transactionDate <- as.Date(Sys.time() - (timeLength*multiplier))
-      assetName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded For .* from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Tt]raded For ") %>% stringr::str_remove(" from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove(' \\d+$')
-      toTeam <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded For") %>% stringr::str_remove(" [Tt]raded For")
+      assetName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or .* from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or ") %>% stringr::str_remove(" from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove(' \\d+$')
+      toTeam <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or") %>% stringr::str_remove(" [Tt]raded [Ff]or")
       fromTeam <- transDetails %>% stringr::str_extract(" from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove(" from ") %>% stringr::str_remove(' \\d+$')
       tradeLink <- transactions %>% rvest::html_nodes(".list-group-item-text a")
       tradeLink <- paste0("https://www.fleaflicker.com",tradeLink[which(grepl("trades",tradeLink))] %>% rvest::html_attr("href"))
