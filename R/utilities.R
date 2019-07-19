@@ -42,7 +42,7 @@ getTeams <- function(leagueLink) {
     return(data.frame(season = season, teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com',team_links), teamName = team_names))
 }
 
-getRosters <- function(teams, week, current = 0) {
+getRosters <- function(teams, season, week, current = 0) {
   rosters <- data.frame(week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
