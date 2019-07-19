@@ -42,12 +42,14 @@ getTeams <- function(leagueLink) {
     return(data.frame(season = season, teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com',team_links), teamName = team_names))
 }
 
-getRosters <- function(teams, season, week) {
+getRosters <- function(teams, week, current = 0) {
   rosters <- data.frame(week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     teamLink <- as.character(teams[i, "teamLink"])
-    teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?week=',week))
+    if(current == 0){
+      teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?week=',week))
+    }
     roster <- xml2::read_html(teamLink)
     player_tr <- roster %>% rvest::html_nodes("tr")
     player_tr <- player_tr[c(3:12,15:length(player_tr))]
