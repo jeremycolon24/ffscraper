@@ -41,7 +41,7 @@ getRosters <- function(teams, season, week, current = 0) {
 #' @examples
 #' getDraftPicks(teams)
 getDraftPicks <- function(teams) {
-  picks_df <- data.frame(draftSeason = numeric(), teamID = numeric(), roundPick = character(), overallPick = numeric(), origin_destination = character(), to_from_team = character(), trade_link = character())
+  picks_df <- data.frame(draftSeason = numeric(), teamID = numeric(), roundPick = character(), overallPick = numeric(), origin_destination = character(), to_from_team = character(), trade_link = character(), pick_used = character())
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     picksLink <- paste0(as.character(teams[i, "teamLink"]),"/picks")
@@ -51,6 +51,12 @@ getDraftPicks <- function(teams) {
       pickSeason <- pick_tr[j] %>% rvest::html_nodes("h3")
       if(length(pickSeason)){
         draftSeason <- pickSeason %>% rvest::html_text() %>% stringr::str_remove(" Draft Picks") %>% as.numeric()
+      }
+      pickUsed <- pick_tr[j] %>% rvest::html_nodes("em")
+      if(length(pickUsed)){
+        pick_used <- pickUsed %>% html_text()
+      } else {
+        pick_used <- "Used"
       }
       pickData <- pick_tr[j] %>% rvest::html_nodes("td .text-muted")
       if(length(pickData)){
@@ -69,7 +75,7 @@ getDraftPicks <- function(teams) {
         }
         trade_link <- pickData %>% rvest::html_nodes("td a") %>% rvest::html_attr("href") %>% stringr::str_extract(".*trades.*") %>% na.omit() %>% as.character()
         trade_link <- if(length(trade_link)) {paste0('https://www.fleaflicker.com',trade_link)} else {"N/A"}
-        picks_df <- rbind(picks_df, data.frame(draftSeason = draftSeason, teamID = teamID, roundPick = roundPick, overallPick = overallPick, status = status, to_from_team = to_from_team, trade_link = trade_link))
+        picks_df <- rbind(picks_df, data.frame(draftSeason = draftSeason, teamID = teamID, roundPick = roundPick, overallPick = overallPick, status = status, to_from_team = to_from_team, trade_link = trade_link, pick_used = pick_used))
       }
     }
   }
