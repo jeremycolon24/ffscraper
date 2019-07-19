@@ -54,7 +54,7 @@ getDraftPicks <- function(teams) {
       }
       pickUsed <- pick_tr[j] %>% rvest::html_nodes("em")
       if(length(pickUsed)){
-        pick_used <- pickUsed %>% html_text()
+        pick_used <- pickUsed %>% rvest::html_text()
       } else {
         pick_used <- "Used"
       }
