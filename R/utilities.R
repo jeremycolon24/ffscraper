@@ -1,10 +1,9 @@
 # Utilities
 #
-# A set of functions that get the necessary data to pull other data.
-#     from fleaflicker
+# A set of functions that get the necessary data to pull other data from fleaflicker.
 #
 
-#' Get links from Fleaflicker website
+#' Gets links from Fleaflicker website and adds them to your local variables
 #'
 #' @param leagueID Your Fleaflicker league ID
 #' @return Links added to your environment
@@ -20,7 +19,7 @@ getLinks <- function(leagueID, season) {
     matchupsLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/",leagueID, "/scores?season=",season)
 }
 
-#' Get teams from main league page
+#' Gets team information from main league page
 #'
 #' @param link Link to main league page
 #' @return Data frame with team ID and team name
@@ -40,24 +39,4 @@ getTeams <- function(leagueLink) {
       season <- rep(teams %>% rvest::html_nodes(".dropdown-toggle") %>% rvest::html_text() %>% trimws(),length(team_ids))
     }
     return(data.frame(season = season, teamOwner = team_owners, teamID = team_ids, teamLink = paste0('https://www.fleaflicker.com',team_links), teamName = team_names))
-}
-
-getRosters <- function(teams, season, week) {
-  rosters <- data.frame(week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
-  for(i in 1:nrow(teams)){
-    teamID <- teams[i, "teamID"]
-    teamLink <- as.character(teams[i, "teamLink"])
-    teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?week=',week))
-    roster <- xml2::read_html(teamLink)
-    player_tr <- roster %>% rvest::html_nodes("tr")
-    player_tr <- player_tr[c(3:12,15:length(player_tr))]
-    for(j in 1:length(player_tr)){
-      playerNames <- player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
-      if(length(playerNames)){
-        playerLinks <- paste0('https://www.fleaflicker.com',player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_attr("href"))
-        rosters <- rbind(rosters, data.frame(week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, starter = ifelse(j <= 10,"yes","no")))
-      }
-    }
-  }
-  return(rosters %>% mutate(season = season))
 }
