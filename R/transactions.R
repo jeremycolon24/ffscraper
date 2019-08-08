@@ -135,7 +135,7 @@ getTrades <- function(tradesLink){
     tradeDetails <- trades %>% rvest::html_nodes(".list-group-item-text")
 
   }
-
+  colnames(tradeData) <- c('tradeID','transactionDate','tradeHeading','fromTeam','asset','toTeam','vetoes','tradeLink')
   return(distinct(tradeData))
 }
 
