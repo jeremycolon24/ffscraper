@@ -38,18 +38,27 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
       transactions <- xml2::read_html(transLogLinkParams)
       transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
       while(length(transDetails) > 0){
-        timeLength <- transDetails %>% stringr::str_extract('\\d+ [a-z]+ ago$') %>% stringr::str_extract('^\\d+') %>% as.integer()
-        timePeriod <- transDetails %>% stringr::str_extract('\\d+ [a-z]+ ago$') %>% stringr::str_extract(' [a-z]+ ') %>% stringr::str_trim()
-        multiplier <- case_when(
-          stringr::str_detect(timePeriod,'minute') ~ 60,
-          stringr::str_detect(timePeriod,'hour') ~ 60*60,
-          stringr::str_detect(timePeriod,'day') ~ 60*60*24,
-          stringr::str_detect(timePeriod,'week') ~ 60*60*24*7,
-          stringr::str_detect(timePeriod,'month') ~ 60*60*24*30,
-          stringr::str_detect(timePeriod,'year') ~ 60*60*24*365,
-          TRUE ~ 1
-        )
-        transactionDate <- as.Date(Sys.time() - (timeLength*multiplier))
+
+        script <- transactions %>%
+          rvest::html_nodes("script#page-data") %>%
+          as.character() %>%
+          stringr::str_remove('^window.pageData = \\{"tooltips.:.') %>%
+          stringr::str_remove('..;$')
+
+        script <- stringr::str_split(script,'\\},\\{')[[1]]
+        script <- as.data.frame(script)
+        colnames(script) <- "content"
+        script$content <- as.character(script$content)
+
+        transactionDates <- script %>%
+          mutate(
+            transactionDate = stringr::str_extract(content,'"contents":.[A-Za-z]{3} \\d+/\\d+/\\d+ \\d+:\\d+[ ]?[AP]M'),
+            transactionDate = as.POSIXct(stringr::str_remove(transactionDate,'"contents":"'), format="%a %m/%d/%y %I:%M %p")
+          ) %>%
+          select(transactionDate) %>%
+          filter(!is.na(transactionDate)) %>%
+          arrange(desc(transactionDate))
+
         if(t == "CLAIM"){
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]laimed [A-Za-z.' -]+ \\(") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]laimed ") %>% stringr::str_remove(' \\($')
           transactionDetail <- transDetails %>% stringr::str_extract('\\$\\d+')
@@ -60,7 +69,7 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]ut [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]ut ") %>% stringr::str_remove(' \\d+$')
           transactionDetail <- ""
         }
-        transData <- rbind(transData, data.frame(transactionDate, transType = t, teamID = id, playerName, transactionDetail))
+        transData <- rbind(transData, data.frame(transactionDates, transType = t, teamID = id, playerName, transactionDetail))
         tableOffset <- tableOffset + 15
         transLogLinkParams <- paste0(transLogLink,"?transactionType=",t,"&teamId=",id,"&tableOffset=",tableOffset)
         transactions <- xml2::read_html(transLogLinkParams)
