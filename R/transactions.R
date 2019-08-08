@@ -75,65 +75,67 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
 
 #' Gets all trades from trades page
 #'
-#' @param transLogLink Web link to transaction log
-#' @param leagueLink Web link to main league page
-#' @param team Accepts Team ID to get transactions for. Defaults to ALL
+#' @param tradesLink Web link to trade log
 #' @return Trades
 #' @examples
 #' getTrades(tradesLink)
 #' @export
-getTrades <- function(transLogLink, leagueLink, team = 'ALL'){
+getTrades <- function(tradesLink){
 
-  teams <- ffscraper::getTeams(leagueLink)
-  if(team != "ALL" & !(team %in% teams['teamID'])){
-    stop("Not a valid team ID. Use getTeams function to see your League's team IDs")
-  }
+  tradeData <- data.frame(tradeID = integer(), transactionDate = character(), heading = character(), fromTeam = integer(), asset = character(), toTeam = integer(), vetoes = integer(), tradeLink = character())
+  tableOffset <- 0
+  link <- paste0(tradesLink,"?status=EXECUTED&tableOffset=",tableOffset)
+  trades <- xml2::read_html(link)
+  tradeDetails <- trades %>% rvest::html_nodes(".list-group-item-text")
 
-  tradeData <- data.frame(tradeID = integer(), transactionDate = character(), fromTeam = integer(), assetName = character(), toTeam = integer(), tradeLink = character())
-
-  for(i in 1:length(team)) {
-    tableOffset <- 0
-    if(team == "ALL"){
-      tradesLink <- paste0(transLogLink,"?transactionType=TRADE&tableOffset=",tableOffset)
-    } else {
-      tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
-    }
-    transactions <- xml2::read_html(tradesLink)
-    transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
-
-    while(length(transDetails) > 0){
-      timeLength <- transDetails %>% stringr::str_extract('\\d+ [a-z]+ ago$') %>% stringr::str_extract('^\\d+') %>% as.integer()
-      timePeriod <- transDetails %>% stringr::str_extract('\\d+ [a-z]+ ago$') %>% stringr::str_extract(' [a-z]+ ') %>% stringr::str_trim()
-      multiplier <- case_when(
-        stringr::str_detect(timePeriod,'minute') ~ 60,
-        stringr::str_detect(timePeriod,'hour') ~ 60*60,
-        stringr::str_detect(timePeriod,'day') ~ 60*60*24,
-        stringr::str_detect(timePeriod,'week') ~ 60*60*24*7,
-        stringr::str_detect(timePeriod,'month') ~ 60*60*24*30,
-        stringr::str_detect(timePeriod,'year') ~ 60*60*24*365,
-        TRUE ~ 1
-      )
-      transactionDate <- as.Date(Sys.time() - (timeLength*multiplier))
-      assetName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or .* from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or ") %>% stringr::str_remove(" from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove(' \\d+$')
-      toTeam <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Tt]raded [Ff]or") %>% stringr::str_remove(" [Tt]raded [Ff]or")
-      fromTeam <- transDetails %>% stringr::str_extract(" from [A-Za-z0-9(),' ]+ \\d+") %>% stringr::str_remove(" from ") %>% stringr::str_remove(' \\d+$')
-      tradeLink <- transactions %>% rvest::html_nodes(".list-group-item-text a")
-      tradeLink <- paste0("https://www.fleaflicker.com",tradeLink[which(grepl("trades",tradeLink))] %>% rvest::html_attr("href"))
-      tradeID <- tradeLink %>% stringr::str_extract("\\d+$")
-      tradeData <- rbind(tradeData, data.frame(tradeID, transactionDate, fromTeam, assetName, toTeam, tradeLink))
-
-      tableOffset <- tableOffset + 15
-      if(team == "ALL"){
-        tradesLink <- paste0(transLogLink,"?transactionType=TRADE&tableOffset=",tableOffset)
-      } else {
-        tradesLink <- paste0(transLogLink,"?transactionType=TRADE&teamId=",team[i],"&tableOffset=",tableOffset)
+  while(length(tradeDetails) > 0){
+    heading <- trades %>% rvest::html_nodes(".list-group-item-heading") %>% rvest::html_text() %>% stringr::str_remove(" Complete")
+    transactionDates <- tradeDetails %>% rvest::html_nodes(".relative-date") %>% rvest::html_attr("title") %>% as.POSIXct(format="%a %m/%d/%y %I:%M %p")
+    vetoes <- tradeDetails %>% rvest::html_nodes(".media-info") %>% rvest::html_text() %>% stringr::str_extract('\\d Vetoes') %>% stringr::str_extract('\\d') %>% as.integer()
+    tradeLink <- tradeDetails %>% rvest::html_nodes(".btn-xs")
+    tradeLink <- paste0("https://www.fleaflicker.com",tradeLink[which(grepl("trades",tradeLink))] %>% rvest::html_attr("href"))
+    tradeID <- tradeLink %>% stringr::str_extract("\\d+$")
+    for(i in seq(1,length(tradeDetails))){
+      trade <- tradeDetails[i]
+      tradeTeams <- trade %>% rvest::html_nodes("div .league-name") %>% rvest::html_text() %>% unique()
+      for(j in seq(1,length(tradeTeams))){
+        toTeam <- tradeTeams[j]
+        if(length(tradeTeams) == 2){
+          fromTeam <- tradeTeams[-j]
+          assets <- (trade %>% rvest::html_nodes("ul"))[j] %>% rvest::html_nodes("li")
+          if(length(assets) > 0){
+            for(k in seq(1,length(assets))){
+              if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
+                asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
+              } else {
+                asset <- assets[k] %>% rvest::html_text()
+              }
+              tradeData <- rbind(tradeData, data.frame(tradeID[i], transactionDates[i], heading[i], fromTeam, asset, toTeam, vetoes[i], tradeLink[i]))
+            }
+          }
+        } else {
+          assets <- (trade %>% rvest::html_nodes("ul"))[j] %>% rvest::html_nodes("li")
+          if(length(assets) > 0){
+            for(k in seq(1,length(assets))){
+              fromTeam <- assets[k] %>% rvest::html_text() %>% stringr::str_extract("from .*") %>% stringr::str_remove("from ")
+              if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
+                asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
+              } else {
+                asset <- assets[k] %>% rvest::html_text()
+              }
+              tradeData <- rbind(tradeData, data.frame(tradeID[i], transactionDates[i], heading[i], fromTeam, asset, toTeam, vetoes[i], tradeLink[i]))
+            }
+          }
+        }
       }
-      transactions <- xml2::read_html(tradesLink)
-      transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
-
     }
-  }
+    tableOffset <- tableOffset + 5
+    link <- paste0(tradesLink,"?status=EXECUTED&tableOffset=",tableOffset)
+    trades <- xml2::read_html(link)
+    tradeDetails <- trades %>% rvest::html_nodes(".list-group-item-text")
 
+  }
+  colnames(tradeData) <- c('tradeID','transactionDate','tradeHeading','fromTeam','asset','toTeam','vetoes','tradeLink')
   return(distinct(tradeData))
 }
 
