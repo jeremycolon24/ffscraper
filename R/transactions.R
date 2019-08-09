@@ -75,7 +75,7 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]ut [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]ut ") %>% stringr::str_remove(' \\d+$')
           transactionDetail <- ""
         }
-        transData <- rbind(transData, data.frame(transactionDates, transType = t, teamID = id, playerName, transactionDetail))
+        transData <- rbind(transData, data.frame(transactionDate = transactionDates, transType = t, teamID = id, playerName, transactionDetail))
         tableOffset <- tableOffset + 15
         transLogLinkParams <- paste0(transLogLink,"?transactionType=",t,"&teamId=",id,"&tableOffset=",tableOffset)
         transactions <- xml2::read_html(transLogLinkParams)
