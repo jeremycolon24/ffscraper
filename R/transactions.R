@@ -123,7 +123,7 @@ getTrades <- function(tradesLink){
               if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
                 asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
               } else {
-                asset <- assets[k] %>% rvest::html_text() %>% stringr::str_remove(" from *")
+                asset <- assets[k] %>% rvest::html_text() %>% stringr::str_remove(" from .*")
               }
               tradeData <- rbind(tradeData, data.frame(tradeID[i], transactionDates[i], heading[i], fromTeam, asset, toTeam, vetoes[i], tradeLink[i]))
             }
@@ -136,7 +136,7 @@ getTrades <- function(tradesLink){
               if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
                 asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
               } else {
-                asset <- assets[k] %>% rvest::html_text() %>% stringr::str_remove(" from *")
+                asset <- assets[k] %>% rvest::html_text() %>% stringr::str_remove(" from .*")
               }
               tradeData <- rbind(tradeData, data.frame(tradeID[i], transactionDates[i], heading[i], fromTeam, asset, toTeam, vetoes[i], tradeLink[i]))
             }
