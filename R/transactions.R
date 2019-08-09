@@ -41,7 +41,7 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
 
         script <- transactions %>%
           rvest::html_nodes("script#page-data") %>%
-          as.character() %>%
+          rvest::html_text() %>%
           stringr::str_remove('^window.pageData = \\{"tooltips.:.') %>%
           stringr::str_remove('..;$')
 
@@ -53,11 +53,17 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
         transactionDates <- script %>%
           mutate(
             transactionDate = stringr::str_extract(content,'"contents":.[A-Za-z]{3} \\d+/\\d+/\\d+ \\d+:\\d+[ ]?[AP]M'),
+            ids = stringr::str_extract(content,paste0(transactionDate,'.+ids":\\["[A-Za-z0-9_,"]+\\]')),
+            ids = stringr::str_remove(ids, transactionDate),
+            ids = stringr::str_extract(ids, '\\["[A-Za-z0-9_,"]+\\]'),
+            ids = stringr::str_count(ids, ",") + 1,
             transactionDate = as.POSIXct(stringr::str_remove(transactionDate,'"contents":"'), format="%a %m/%d/%y %I:%M %p")
           ) %>%
-          select(transactionDate) %>%
+          select(transactionDate, ids) %>%
           filter(!is.na(transactionDate)) %>%
           arrange(desc(transactionDate))
+
+        transactionDates <- transactionDates[rep(seq_len(nrow(transactionDates)), transactionDates$ids),"transactionDate"]
 
         if(t == "CLAIM"){
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]laimed [A-Za-z.' -]+ \\(") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]laimed ") %>% stringr::str_remove(' \\($')
