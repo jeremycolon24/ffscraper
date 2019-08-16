@@ -14,12 +14,12 @@
 #' getRosters(teams, 2019, 12)
 #' getRosters(teams, 2019, 1, 1) # You can put any season/week value if current == 1.
 getRosters <- function(teams, season, week, current = 0) {
-  rosters <- data.frame(week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
+  rosters <- data.frame(season = numeric(), week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     teamLink <- as.character(teams[i, "teamLink"])
     if(current == 0){
-      teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?week=',week))
+      teamLink <- if_else(grepl('season',teamLink),paste0(teamLink,'&week=',week),paste0(teamLink,'?season=',season,'week=',week))
     }
     roster <- xml2::read_html(teamLink)
     player_tr <- roster %>% rvest::html_nodes("tr")
@@ -28,11 +28,11 @@ getRosters <- function(teams, season, week, current = 0) {
       playerNames <- player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
       if(length(playerNames)){
         playerLinks <- paste0('https://www.fleaflicker.com',player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_attr("href"))
-        rosters <- rbind(rosters, data.frame(week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, starter = ifelse(j <= 10,"yes","no")))
+        rosters <- rbind(rosters, data.frame(season = season, week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, starter = ifelse(j <= 10,"yes","no")))
       }
     }
   }
-  return(rosters %>% mutate(season = season))
+  return(rosters)
 }
 
 #' Get all draft picks currently visible on each teams picks page
