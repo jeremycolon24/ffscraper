@@ -138,7 +138,7 @@ getTrades <- function(tradesLink){
           assets <- (trade %>% rvest::html_nodes("ul"))[j] %>% rvest::html_nodes("li")
           if(length(assets) > 0){
             for(k in seq(1,length(assets))){
-              fromTeam <- assets[k] %>% rvest::html_text() %>% stringr::str_extract("from .*") %>% stringr::str_remove("from ")
+              fromTeam <- assets[k] %>% rvest::html_nodes("a") %>% rvest::html_attr("href") %>% stringr::str_extract('\\d+$') %>% as.numeric()
               if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
                 asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
               } else {
