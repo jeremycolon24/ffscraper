@@ -112,7 +112,13 @@ getTrades <- function(tradesLink){
     tradeID <- tradeLink %>% stringr::str_extract("\\d+$")
     for(i in seq(1,length(tradeDetails))){
       trade <- tradeDetails[i]
-      tradeTeams <- trade %>% rvest::html_nodes("div .league-name") %>% rvest::html_text() %>% unique()
+      tradeTeams <- trade %>%
+        rvest::html_nodes("div .league-name") %>%
+        rvest::html_nodes("a") %>%
+        rvest::html_attr('href') %>%
+        stringr::str_extract('\\d+$') %>%
+        as.numeric() %>%
+        unique()
       for(j in seq(1,length(tradeTeams))){
         toTeam <- tradeTeams[j]
         if(length(tradeTeams) == 2){
