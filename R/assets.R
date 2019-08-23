@@ -81,3 +81,74 @@ getDraftPicks <- function(teams) {
   }
   return(picks_df)
 }
+
+
+#' Get all players from Players page
+#'
+#' @param playerLink link to players page
+#' @param fa_only free agents only
+#' @param rookies_only rookies only
+#' @examples
+#' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE)
+getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
+  offset <- 0
+  playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?tableOffset=",offset)
+  if(rookies_only){
+    playerLink <- paste0(playerLink,'&rookies=true')
+  }
+  if(!fa_only){
+    playerLink <- paste0(playerLink,'&isFreeAgent=false')
+  }
+
+  players <- xml2::read_html(playerLink)
+  player_info <- players %>% rvest::html_nodes("td") %>% rvest::html_text()
+  rookie_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_detect('graduation-cap')
+  injury_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('span class="injury.*[>][A-Z]+[<][/]span[>][<]a class="player-text"') %>% stringr::str_extract('>[A-Z]+<') %>% stringr::str_extract('[A-Z]+')
+  player_df <- as.data.frame(matrix(0, ncol = 19, nrow = 0))
+  player_df <- player_df %>% mutate_all(as.character)
+
+  while(length(player_info) > 0){
+    for(i in seq(1,20)){
+      player_df = rbind(player_df,
+                        t(c(player_info[c((seq(1,18)+(18*(i-1))))],rookie_flag[(i*18)-17],injury_flag[(i*18)-17])))
+    }
+    offset = offset + 20
+    playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?tableOffset=",offset)
+    players <- xml2::read_html(playerLink)
+    player_info2 <- players %>% rvest::html_nodes("td") %>% rvest::html_text()
+    if(identical(player_info,player_info2)){
+      break
+    } else {
+      player_info <- player_info2
+      rookie_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_detect('graduation-cap')
+      injury_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('span class="injury.*[>][A-Z]+[<][/]span[>][<]a class="player-text"') %>% stringr::str_extract('>[A-Z]+<') %>% stringr::str_extract('[A-Z]+')
+    }
+  }
+
+  colnames(player_df) <- c('name','null1','next_game','null3',
+                           'null4','pos_draft_rank','null5','pos_fantasy_rank',
+                           'null6','last_1','last_3','last_5','total','avg',
+                           'null7','null8','pct_owned','action','rookie','injury')
+
+  player_df <- player_df[,!stringr::str_detect(colnames(player_df),'null')]
+  player_df <- player_df %>%
+    mutate(last_1 = as.numeric(stringr::str_extract(last_1,'[0-9]+[.][0-9]+')),
+           last_3 = as.numeric(stringr::str_extract(last_3,'[0-9]+[.][0-9]+')),
+           last_5 = as.numeric(stringr::str_extract(last_5,'[0-9]+[.][0-9]+')),
+           total = as.numeric(stringr::str_extract(total,'[0-9]+[.][0-9]+')),
+           avg = as.numeric(stringr::str_extract(avg,'[0-9]+[.][0-9]+')),
+           pct_owned = as.numeric(stringr::str_remove(pct_owned,'%')),
+           pos_fantasy_rank = if_else(pos_fantasy_rank == '', 'N/A',as.character(pos_fantasy_rank)),
+           position = stringr::str_extract(pos_draft_rank,'^[A-Z/]+'),
+           pos_draft_rank = stringr::str_remove(pos_draft_rank,position),
+           location = if_else(stringr::str_detect(next_game,'@'),'Away','Home'),
+           next_opponent = stringr::str_remove(stringr::str_remove(stringr::str_extract(next_game, '[@]?[A-Z]{2,3}[A-Z][a-z]{2} '),'[A-Z][a-z]{2} '),'@'),
+           team = stringr::str_remove(stringr::str_remove(stringr::str_extract(name, paste0(position,' [A-Z]{2,3} [0-9()]+')), paste0(position,' ')),' [0-9()]+'),
+           name = stringr::str_remove(name, paste0(position,' [A-Z]{2,3} [0-9()]+')),
+           name = if_else(is.na(injury), name, stringr::str_remove(name, paste0('^',injury))),
+           rookie = if_else(as.character(rookie) == "TRUE",'Rookie','Veteran')
+           ) %>%
+    select(name, position, team, experience = rookie, injury, pos_draft_rank, pos_fantasy_rank, pct_owned, next_opponent, location, last_1, last_3, last_5, total, avg)
+
+  return(player_df)
+}
