@@ -17,6 +17,7 @@ getLinks <- function(leagueID, season) {
     transLogLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/transactions")
     tradesLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/", leagueID, "/trades")
     matchupsLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/",leagueID, "/scores?season=",season)
+    playerLink <<- paste0("https://www.fleaflicker.com/nfl/leagues/",leagueID, "/players")
 }
 
 #' Gets team information from main league page

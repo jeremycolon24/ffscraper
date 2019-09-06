@@ -19,7 +19,7 @@
 #' getPlayerProjections(playersLink, 1, 7, 7, TRUE, 'QB')
 #' getPlayerProjections(playersLink, 1, 7, 7, FALSE, c('QB','K'))
 #' @export
-getPlayerProjections <- function(playersLink, week, statType = 7, sortType = 7, FA_only = TRUE, position = "ALL") {
+getPlayerProjections <- function(playersLink, season, week, statType = 7, sortType = 7, FA_only = TRUE, position = "ALL") {
     playersLink <- stringr::str_remove(playersLink,'[?]season=\\d+')
     position <- stringr::str_to_upper(position)
     positions <- data.frame(id = c(4, 1, 2, 8, 11, 16, 256), pos = c("QB", "RB", "WR", "TE", "FLEX", "K", "D/ST"))
@@ -70,7 +70,7 @@ getPlayerProjections <- function(playersLink, week, statType = 7, sortType = 7, 
         }
         page_offset <- 0
     }
-    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(week = week, gameday = stringr::str_extract(gametime, "^[A-Za-z]{3}"), gametime = stringr::str_extract(gametime,
-        "\\d+:\\d+ [PAM]+")) %>% dplyr::select(week, name, position, team, opponent, gameday, gametime, percent_owned, injury, projection))
+    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(season = season, week = week, gameday = stringr::str_extract(gametime, "^[A-Za-z]{3}"), gametime = stringr::str_extract(gametime,
+        "\\d+:\\d+ [PAM]+")) %>% dplyr::select(season, week, name, position, team, opponent, gameday, gametime, percent_owned, injury, projection))
     return(playerData)
 }

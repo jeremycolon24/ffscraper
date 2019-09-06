@@ -112,7 +112,15 @@ getTrades <- function(tradesLink){
     tradeID <- tradeLink %>% stringr::str_extract("\\d+$")
     for(i in seq(1,length(tradeDetails))){
       trade <- tradeDetails[i]
-      tradeTeams <- trade %>% rvest::html_nodes("div .league-name") %>% rvest::html_text() %>% unique()
+      tradeTeams <- trade %>%
+        rvest::html_nodes("div .league-name") %>%
+        rvest::html_nodes("a") %>%
+        rvest::html_attr('href') %>%
+        stringr::str_extract('teams/\\d+$') %>%
+        stringr::str_extract('\\d+$') %>%
+        na.omit() %>%
+        as.numeric() %>%
+        unique()
       for(j in seq(1,length(tradeTeams))){
         toTeam <- tradeTeams[j]
         if(length(tradeTeams) == 2){
@@ -132,7 +140,7 @@ getTrades <- function(tradesLink){
           assets <- (trade %>% rvest::html_nodes("ul"))[j] %>% rvest::html_nodes("li")
           if(length(assets) > 0){
             for(k in seq(1,length(assets))){
-              fromTeam <- assets[k] %>% rvest::html_text() %>% stringr::str_extract("from .*") %>% stringr::str_remove("from ")
+              fromTeam <- assets[k] %>% rvest::html_nodes("a") %>% rvest::html_attr("href") %>% stringr::str_extract('teams/\\d+$') %>% stringr::str_extract('\\d+$') %>% na.omit() %>% as.numeric()
               if(length(assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()) > 0){
                 asset <- assets[k] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
               } else {
