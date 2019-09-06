@@ -12,8 +12,7 @@
 #' getMatchups(matchupsLink, 1)
 #' @export
 #'
-getMatchups <- function(matchupsLink, week) {
-  season <- matchupsLink %>% stringr::str_extract("\\d+$")
+getMatchups <- function(matchupsLink, season, week) {
   matchupsLinkParam <- paste0(matchupsLink,"&week=",week)
   matchups <- xml2::read_html(matchupsLinkParam)
 
