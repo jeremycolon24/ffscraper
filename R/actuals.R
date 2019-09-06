@@ -11,7 +11,7 @@
 #' @examples
 #' getPlayerPoints(teams, 1)
 #' @export
-getAllPlayerPoints <- function(playersLink, week, statType = 2, sortType = 2, FA_only = TRUE, position = "ALL") {
+getAllPlayerPoints <- function(playersLink, season, week, statType = 2, sortType = 2, FA_only = TRUE, position = "ALL") {
     position <- stringr::str_to_upper(position)
     positions <- data.frame(id = c(4, 1, 2, 8, 11, 16, 256), pos = c("QB", "RB", "WR", "TE", "FLEX", "K", "D/ST"))
     if (!position %in% positions$pos & position != "ALL") {
@@ -26,7 +26,6 @@ getAllPlayerPoints <- function(playersLink, week, statType = 2, sortType = 2, FA
     }
 
     playerData <- data.frame(season = numeric(), week = numeric(), name = character(), position = character(), team = character(), points = numeric())
-    season <- playersLink %>% stringr::str_extract('\\d+$') %>% as.integer()
     page_offset <- 0
     for (i in 1:nrow(positions)) {
         players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
