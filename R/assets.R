@@ -92,7 +92,7 @@ getDraftPicks <- function(teams) {
 #' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE)
 getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
   offset <- 0
-  playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?tableOffset=",offset)
+  playerLink <- paste0(playerLink,"?tableOffset=",offset)
   if(rookies_only){
     playerLink <- paste0(playerLink,'&rookies=true')
   }
