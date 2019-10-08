@@ -66,7 +66,7 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
         transactionDates <- transactionDates[rep(seq_len(nrow(transactionDates)), transactionDates$ids),"transactionDate"]
 
         if(t == "CLAIM"){
-          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]laimed [A-Za-z.' -]+ \\(") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]laimed ") %>% stringr::str_remove(' \\($')
+          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]laimed [A-Za-z.' -]+ [$]") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]laimed ") %>% stringr::str_remove(' \\$')
           transactionDetail <- transDetails %>% stringr::str_extract('\\$\\d+')
         } else if(t == "ADD") {
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Aa]dded [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Aa]dded ") %>% stringr::str_remove(' \\d+$')
