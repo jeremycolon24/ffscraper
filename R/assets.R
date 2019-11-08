@@ -14,7 +14,7 @@
 #' getRosters(teams, 2019, 12)
 #' getRosters(teams, 2019, 1, 1) # You can put any season/week value if current == 1.
 getRosters <- function(teams, season, week, current = 0) {
-  rosters <- data.frame(season = numeric(), week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), starter = character())
+  rosters <- data.frame(season = numeric(), week = numeric(), teamID = numeric(), playerLink = character(), playerName = character(), positionSlot = character(), starter = character())
   for(i in 1:nrow(teams)){
     teamID <- teams[i, "teamID"]
     teamLink <- as.character(teams[i, "teamLink"])
@@ -28,7 +28,11 @@ getRosters <- function(teams, season, week, current = 0) {
       playerNames <- player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
       if(length(playerNames)){
         playerLinks <- paste0('https://www.fleaflicker.com',player_tr[j] %>% rvest::html_nodes(".player-text") %>% rvest::html_attr("href"))
-        rosters <- rbind(rosters, data.frame(season = season, week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, starter = ifelse(j <= 10,"yes","no")))
+        playerPosSlot <- player_tr[j] %>% rvest::html_nodes(".label.label-success.label-block") %>% rvest::html_text()
+        if(length(playerPosSlot) == 0){
+          playerPosSlot <- 'Bench'
+        }
+        rosters <- rbind(rosters, data.frame(season = season, week = week, teamID = teamID, playerLink = playerLinks, playerName = playerNames, positionSlot = playerPosSlot, starter = ifelse(j <= 10,"yes","no")))
       }
     }
   }
