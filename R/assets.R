@@ -92,11 +92,12 @@ getDraftPicks <- function(teams) {
 #' @param playerLink link to players page
 #' @param fa_only free agents only
 #' @param rookies_only rookies only
+#' @param offseason in-season or offseason flag
 #' @examples
-#' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE)
-getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
+#' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE, offseason = FALSE)
+getPlayers <- function(playerLink, fa_only = FALSE, rookies_only = FALSE, offseason = FALSE){
   offset <- 0
-  playerLink <- paste0(playerLink,"?tableOffset=",offset)
+  playerLink <- paste0(playerLink,"?statType=0&sortMode=0&position=287&tableOffset=",offset)
   if(rookies_only){
     playerLink <- paste0(playerLink,'&rookies=true')
   }
@@ -106,18 +107,34 @@ getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
 
   players <- xml2::read_html(playerLink)
   player_info <- players %>% rvest::html_nodes("td") %>% rvest::html_text()
+  teams <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('<a href=\"/nfl/leagues/197269/teams/\\d+') %>% stringr::str_extract('\\d+$') %>% as.integer()
   rookie_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_detect('graduation-cap')
   injury_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('span class="injury.*[>][A-Z]+[<][/]span[>][<]a class="player-text"') %>% stringr::str_extract('>[A-Z]+<') %>% stringr::str_extract('[A-Z]+')
   player_df <- as.data.frame(matrix(0, ncol = 19, nrow = 0))
   player_df <- player_df %>% mutate_all(as.character)
 
+  if(offseason){
+    seq_end <- 20
+  } else {
+    seq_end <- 19
+  }
+
   while(length(player_info) > 0){
-    for(i in seq(1,20)){
+    for(i in seq(1,seq_end+1)){
       player_df = rbind(player_df,
-                        t(c(player_info[c((seq(1,18)+(18*(i-1))))],rookie_flag[(i*18)-17],injury_flag[(i*18)-17])))
+                        t(c(player_info[c((seq(1,(seq_end-2))+((seq_end-2)*(i-1))))],
+                            teams[(i*(seq_end-2)) - 2],
+                            rookie_flag[(i*(seq_end-2))-(seq_end-3)],
+                            injury_flag[(i*(seq_end-2))-(seq_end-3)])))
     }
     offset = offset + 20
-    playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?tableOffset=",offset)
+    playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?statType=0&sortMode=0&position=287&tableOffset=",offset)
+    if(rookies_only){
+      playerLink <- paste0(playerLink,'&rookies=true')
+    }
+    if(!fa_only){
+      playerLink <- paste0(playerLink,'&isFreeAgent=false')
+    }
     players <- xml2::read_html(playerLink)
     player_info2 <- players %>% rvest::html_nodes("td") %>% rvest::html_text()
     if(identical(player_info,player_info2)){
@@ -126,16 +143,17 @@ getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
       player_info <- player_info2
       rookie_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_detect('graduation-cap')
       injury_flag <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('span class="injury.*[>][A-Z]+[<][/]span[>][<]a class="player-text"') %>% stringr::str_extract('>[A-Z]+<') %>% stringr::str_extract('[A-Z]+')
+      teams <- players %>% rvest::html_nodes("td") %>% as.character() %>% stringr::str_extract('<a href=\"/nfl/leagues/197269/teams/\\d+') %>% stringr::str_extract('\\d+$') %>% as.integer()
     }
   }
 
-  colnames(player_df) <- c('name','null1','next_game','null3',
+  if(offseason){
+    colnames(player_df) <- c('name','null1','next_game','null3',
                            'null4','pos_draft_rank','null5','pos_fantasy_rank',
                            'null6','last_1','last_3','last_5','total','avg',
                            'null7','null8','pct_owned','action','rookie','injury')
-
-  player_df <- player_df[,!stringr::str_detect(colnames(player_df),'null')]
-  player_df <- player_df %>%
+    player_df <- player_df[,!stringr::str_detect(colnames(player_df),'null')]
+      player_df <- player_df %>%
     mutate(last_1 = as.numeric(stringr::str_extract(last_1,'[0-9]+[.][0-9]+')),
            last_3 = as.numeric(stringr::str_extract(last_3,'[0-9]+[.][0-9]+')),
            last_5 = as.numeric(stringr::str_extract(last_5,'[0-9]+[.][0-9]+')),
@@ -153,6 +171,33 @@ getPlayers <- function(playerLink, fa_only = TRUE, rookies_only = FALSE){
            rookie = if_else(as.character(rookie) == "TRUE",'Rookie','Veteran')
            ) %>%
     select(name, position, team, experience = rookie, injury, pos_draft_rank, pos_fantasy_rank, pct_owned, next_opponent, location, last_1, last_3, last_5, total, avg)
+  } else {
+    colnames(player_df) <- c('name','null1','next_game','projection',
+                           'null4','null5','pos_fantasy_rank','null6',
+                           'last_1','last_3','last_5','total','avg',
+                           'null7', 'owner','pct_owned','action', 'teamID',
+                           'rookie','injury')
+    player_df <- player_df[,!stringr::str_detect(colnames(player_df),'null')]
+    player_df <- player_df %>%
+      mutate(last_1 = as.numeric(stringr::str_extract(last_1,'[0-9.]+')),
+             last_3 = as.numeric(stringr::str_extract(last_3,'[0-9.]+')),
+             last_5 = as.numeric(stringr::str_extract(last_5,'[0-9.]+')),
+             total = as.numeric(stringr::str_extract(total,'[0-9.]+')),
+             avg = as.numeric(stringr::str_extract(avg,'[0-9.]+')),
+             owner = if_else(owner == '', 'Free Agent', as.character(owner)),
+             pct_owned = as.numeric(stringr::str_remove(pct_owned,'%')),
+             pos_fantasy_rank = as.numeric(as.character(pos_fantasy_rank)),
+             position = stringr::str_extract(stringr::str_extract(name,'[A-Z/]+ [A-Z]{2,3} [(]\\d+[)]$|[A-Z/]+ FA$'), '[A-Z/]+'),
+             location = if_else(stringr::str_detect(next_game,'@'),'Away','Home'),
+             next_opponent = stringr::str_remove(stringr::str_remove(stringr::str_extract(next_game, '[@]?[A-Z]{2,3}[A-Z][a-z]{2} '),'[A-Z][a-z]{2} '),'@'),
+             team = stringr::str_remove(stringr::str_remove(stringr::str_extract(name, paste0(position,' [A-Z]{2,3} [(]\\d+[)]$')), paste0(position,' ')),' [0-9()]+'),
+             name = stringr::str_remove(name, ' [A-Z/]+ [A-Z]{2,3} [(]\\d+[)]$'),
+             name = if_else(is.na(injury), name, stringr::str_remove(name, paste0('^',injury))),
+             rookie = if_else(as.character(rookie) == "TRUE",'Rookie','Veteran')
+             ) %>%
+      select(teamID, name, position, team, experience = rookie, injury, pos_fantasy_rank, pct_owned, next_opponent, location, last_1, last_3, last_5, total, avg)
+  }
 
+  player_df <- player_df %>% filter(!is.na(team))
   return(player_df)
 }

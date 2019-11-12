@@ -162,5 +162,33 @@ getTrades <- function(tradesLink){
   return(distinct(tradeData))
 }
 
+#' Gets a players network
+#'
+#' @param names list of names to search for - currently only supports one name
+#' @param transactions all transactions
+#' @return network
+#' @examples
+#' getPlayerNetwork('Tom Brady', transactions)
+#' @export
+getPlayerNetwork <- function(names, transactions){
 
+  network <- transactions %>% filter(playerName %in% names)
+  tradeIDs <- sort(unique(network$id))
+  excTradeIds <- integer()
+
+  new_network <- data.frame()
+  while(length(tradeIDs) > 0){
+    tmpTrades <- all_transactions %>% filter(id %in% tradeIDs[!tradeIDs %in% excTradeIds], !(playerName %in% names))
+    tmpTrans <- all_transactions %>% filter(playerName %in% tmpTrades$playerName, !(playerName %in% names))
+    excTradeIds <- c(excTradeIds, tradeIDs)
+    tradeIDs <- sort(unique(tmpTrans$id))
+    tradeIDs <- tradeIDs[!tradeIDs %in% excTradeIds]
+    names <- c(names, unique(tmpTrades$playerName))
+    names <- unique(names)
+    new_network <- rbind(new_network,tmpTrans)
+  }
+  network <- rbind(network, new_network)
+
+  return(network)
+}
 
