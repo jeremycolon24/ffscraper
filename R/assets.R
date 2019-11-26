@@ -90,12 +90,13 @@ getDraftPicks <- function(teams) {
 #' Get all players from Players page
 #'
 #' @param playerLink link to players page
+#' @param leagueID ID of league
 #' @param fa_only free agents only
 #' @param rookies_only rookies only
 #' @param offseason in-season or offseason flag
 #' @examples
 #' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE, offseason = FALSE)
-getPlayers <- function(playerLink, fa_only = FALSE, rookies_only = FALSE, offseason = FALSE){
+getPlayers <- function(playerLink, leagueID, fa_only = FALSE, rookies_only = FALSE, offseason = FALSE){
   offset <- 0
   playerLink <- paste0(playerLink,"?statType=0&sortMode=0&position=287&tableOffset=",offset)
   if(rookies_only){
