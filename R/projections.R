@@ -34,7 +34,7 @@ getPlayerProjections <- function(playersLink, season, week, statType = 7, sortTy
             ifelse(FA_only, "true", "false")))
     }
 
-    playerData <- data.frame(name = character(), position = character(), team = character(), opponent = character(), gametime = character(), projection = numeric(), percent_owned = numeric(),
+    playerData <- data.frame(name = character(), position = character(), team = character(), projection = numeric(), percent_owned = numeric(),
         injury = character())
     playerInjuries <- data.frame(name = character(), injury = character())
     page_offset <- 0
@@ -46,10 +46,6 @@ getPlayerProjections <- function(playersLink, season, week, statType = 7, sortTy
             playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
             playerPos <- players %>% rvest::html_nodes(".position") %>% rvest::html_text()
             playerTeam <- players %>% rvest::html_nodes(".player-team") %>% rvest::html_text()
-            playerGameTime <- players %>% rvest::html_nodes(".pro-opp-matchup-info") %>% rvest::html_text()
-            playerOpp <- players %>% rvest::html_nodes(".pro-opp-matchup") %>% rvest::html_text()
-            playerOpp <- playerOpp[-1]
-            playerOpp <- stringr::str_remove(playerOpp, playerGameTime)
             if(length(players %>% rvest::html_nodes(".points-projected-live") %>% rvest::html_text()) > 0) {
               playerProj <- players %>% rvest::html_nodes(".points-projected-live") %>% rvest::html_text()
             } else {
@@ -64,13 +60,12 @@ getPlayerProjections <- function(playersLink, season, week, statType = 7, sortTy
                   }
                 }
             }
-            playerData <- rbind(playerData, data.frame(name = playerNames, position = playerPos, team = playerTeam, opponent = playerOpp, gametime = playerGameTime, projection = playerProj,
-                percent_owned = playerPercOwn))
+            playerData <- rbind(playerData, data.frame(name = playerNames, position = playerPos, team = playerTeam, projection = playerProj,percent_owned = playerPercOwn))
             page_offset <- page_offset + 20
         }
         page_offset <- 0
     }
     playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(season = season, week = week, gameday = stringr::str_extract(gametime, "^[A-Za-z]{3}"), gametime = stringr::str_extract(gametime,
-        "\\d+:\\d+ [PAM]+")) %>% dplyr::select(season, week, name, position, team, opponent, gameday, gametime, percent_owned, injury, projection))
+        "\\d+:\\d+ [PAM]+")) %>% dplyr::select(season, week, name, position, team, percent_owned, injury, projection))
     return(playerData)
 }
