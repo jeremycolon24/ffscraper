@@ -65,6 +65,6 @@ getPlayerProjections <- function(playersLink, season, week, statType = 7, sortTy
         }
         page_offset <- 0
     }
-    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::select(season, week, name, position, team, percent_owned, injury, projection))
+    playerData <- suppressWarnings(playerData %>% dplyr::left_join(playerInjuries, by = "name") %>% dplyr::mutate(season = season, week = week) %>% dplyr::select(season, week, name, position, team, percent_owned, injury, projection))
     return(playerData)
 }
