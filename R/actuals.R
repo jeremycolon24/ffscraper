@@ -18,10 +18,10 @@ getAllPlayerPoints <- function(playersLink, season, week, statType = 2, sortType
         stop("Not a valid position. Please choose from the following: 'QB','RB','WR','TE','FLEX','K','D/ST','ALL'")
     }
     if (position == "ALL") {
-        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(playersLink, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos != "FLEX") %>% dplyr::mutate(link = paste0(playersLink, "&season=", season, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     } else {
-        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(playersLink, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
+        positions <- positions %>% dplyr::filter(pos == position) %>% dplyr::mutate(link = paste0(playersLink, "&season=", season, "&week=", week, "&statType=", statType, "&sortMode=", sortType, "&position=", id, "&isFreeAgent=",
             ifelse(FA_only, "true", "false")))
     }
 
@@ -34,7 +34,7 @@ getAllPlayerPoints <- function(playersLink, season, week, statType = 2, sortType
         players <- xml2::read_html(paste0(as.character(positions[i, "link"]), "&tableOffset=", page_offset))
         playerNames <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_text()
         while (length(playerNames) > 0) {
-            playerIDs <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_attr('href') %>% as.character() %>% stringr::str_extract('\\d+$') %>% as.integer()
+            playerIDs <- players %>% rvest::html_nodes(".player-text") %>% rvest::html_attr('href') %>% as.character() %>% stringr::str_remove('[?]season=\\d+$') %>% stringr::str_extract('\\d+$') %>% as.integer()
             playerOpp <- players %>% rvest::html_nodes("div.pro-opp-matchup") %>% rvest::html_nodes("a") %>% rvest::html_text()
             playerWinLoss <- playerOpp %>% as.character() %>% stringr::str_extract('^[@]?[A-Z]{3,4}') %>% stringr::str_extract('W$|L$')
             playerWinLossScore <- playerOpp %>% as.character() %>% stringr::str_extract('\\d+-\\d+[ ]?$') %>% stringr::str_trim()
