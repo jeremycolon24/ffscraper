@@ -96,9 +96,9 @@ getDraftPicks <- function(teams) {
 #' @param offseason in-season or offseason flag
 #' @examples
 #' getPlayers(playerLink, fa_only = TRUE, rookies_only = FALSE, offseason = FALSE)
-getPlayers <- function(playerLink, leagueID, fa_only = FALSE, rookies_only = FALSE, offseason = FALSE){
+getPlayers <- function(playersLink, leagueID, fa_only = FALSE, rookies_only = FALSE, offseason = FALSE){
   offset <- 0
-  playerLink <- paste0(playerLink,"?statType=0&sortMode=0&position=287&tableOffset=",offset)
+  playerLink <- paste0(playersLink,"&statRange=",default_year,"&statType=0&sortMode=0&position=287&tableSortName=pv8&tableSortDirection=ASC&tableOffset=",offset)
   if(rookies_only){
     playerLink <- paste0(playerLink,'&rookies=true')
   }
@@ -116,7 +116,7 @@ getPlayers <- function(playerLink, leagueID, fa_only = FALSE, rookies_only = FAL
   player_df <- player_df %>% mutate_all(as.character)
 
   if(offseason){
-    seq_end <- 20
+    seq_end <- 17
   } else {
     seq_end <- 19
   }
@@ -131,7 +131,7 @@ getPlayers <- function(playerLink, leagueID, fa_only = FALSE, rookies_only = FAL
                             injury_flag[(i*(seq_end-2))-(seq_end-3)])))
     }
     offset = offset + 20
-    playerLink <- paste0("https://www.fleaflicker.com/nfl/leagues/197269/players?statType=0&sortMode=0&position=287&tableOffset=",offset)
+    playerLink <- stringr::str_replace(playerLink,'tableOffset=\\d+[&]',stringr::str_c('tableOffset=',offset,'&'))
     if(rookies_only){
       playerLink <- paste0(playerLink,'&rookies=true')
     }
@@ -152,29 +152,22 @@ getPlayers <- function(playerLink, leagueID, fa_only = FALSE, rookies_only = FAL
   }
 
   if(offseason){
-    colnames(player_df) <- c('name','null1','next_game','null3',
-                           'null4','pos_draft_rank','null5','pos_fantasy_rank',
-                           'null6','last_1','last_3','last_5','total','avg',
-                           'null7','null8','pct_owned','action','rookie','injury')
+    colnames(player_df) <- c('name','null1','null2','null3',
+                           'null4','pos_draft_rank','null5','null6',
+                           'null7','null8','null9','null10','owner_name','pct_owned',
+                           'action','player_id','teamID','rookie','injury')
     player_df <- player_df[,!stringr::str_detect(colnames(player_df),'null')]
       player_df <- player_df %>%
-    mutate(last_1 = as.numeric(stringr::str_extract(last_1,'[0-9]+[.][0-9]+')),
-           last_3 = as.numeric(stringr::str_extract(last_3,'[0-9]+[.][0-9]+')),
-           last_5 = as.numeric(stringr::str_extract(last_5,'[0-9]+[.][0-9]+')),
-           total = as.numeric(stringr::str_extract(total,'[0-9]+[.][0-9]+')),
-           avg = as.numeric(stringr::str_extract(avg,'[0-9]+[.][0-9]+')),
-           pct_owned = as.numeric(stringr::str_remove(pct_owned,'%')),
-           pos_fantasy_rank = if_else(pos_fantasy_rank == '', 'N/A',as.character(pos_fantasy_rank)),
+    mutate(pct_owned = as.numeric(stringr::str_remove(pct_owned,'%')),
            position = stringr::str_extract(pos_draft_rank,'^[A-Z/]+'),
            pos_draft_rank = stringr::str_remove(pos_draft_rank,position),
-           location = if_else(stringr::str_detect(next_game,'@'),'Away','Home'),
-           next_opponent = stringr::str_remove(stringr::str_remove(stringr::str_extract(next_game, '[@]?[A-Z]{2,3}[A-Z][a-z]{2} '),'[A-Z][a-z]{2} '),'@'),
            team = stringr::str_remove(stringr::str_remove(stringr::str_extract(name, paste0(position,' [A-Z]{2,3} [0-9()]+')), paste0(position,' ')),' [0-9()]+'),
            name = stringr::str_remove(name, paste0(position,' [A-Z]{2,3} [0-9()]+')),
            name = if_else(is.na(injury), name, stringr::str_remove(name, paste0('^',injury))),
+           name = stringr::str_trim(name),
            rookie = if_else(as.character(rookie) == "TRUE",'Rookie','Veteran')
            ) %>%
-    select(name, position, team, experience = rookie, injury, pos_draft_rank, pos_fantasy_rank, pct_owned, next_opponent, location, last_1, last_3, last_5, total, avg)
+    select(name, position, team, experience = rookie, injury, pos_draft_rank, pct_owned, teamID, player_id)
   } else {
     colnames(player_df) <- c('name','null1','next_game','projection',
                            'null4','null5','pos_fantasy_rank','null6',
