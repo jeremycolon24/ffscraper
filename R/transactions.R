@@ -38,41 +38,17 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
       transactions <- xml2::read_html(transLogLinkParams)
       transDetails <- transactions %>% rvest::html_nodes(".list-group-item-text") %>% rvest::html_text()
       while(length(transDetails) > 0){
-
-        script <- transactions %>%
-          rvest::html_nodes("script#page-data") %>%
-          rvest::html_text() %>%
-          stringr::str_remove('^window.pageData = \\{"tooltips.:.') %>%
-          stringr::str_remove('..;$')
-
-        script <- stringr::str_split(script,'\\},\\{')[[1]]
-        script <- as.data.frame(script)
-        colnames(script) <- "content"
-        script$content <- as.character(script$content)
-
-        transactionDates <- script %>%
-          mutate(
-            transactionDate = stringr::str_extract(content,'"contents":.[A-Za-z]{3} \\d+/\\d+/\\d+ \\d+:\\d+[ ]?[AP]M'),
-            ids = stringr::str_extract(content,paste0(transactionDate,'.+ids":\\["[A-Za-z0-9_,"]+\\]')),
-            ids = stringr::str_remove(ids, transactionDate),
-            ids = stringr::str_extract(ids, '\\["[A-Za-z0-9_,"]+\\]'),
-            ids = stringr::str_count(ids, ",") + 1,
-            transactionDate = as.POSIXct(stringr::str_remove(transactionDate,'"contents":"'), format="%a %m/%d/%y %I:%M %p")
-          ) %>%
-          select(transactionDate, ids) %>%
-          filter(!is.na(transactionDate)) %>%
-          arrange(desc(transactionDate))
-
-        transactionDates <- transactionDates[rep(seq_len(nrow(transactionDates)), transactionDates$ids),"transactionDate"]
+        
+        transactionDates <- transactions %>% rvest::html_nodes("relative-time") %>% rvest::html_text() %>% as.POSIXct(format="%a %m/%d/%y %I:%M %p")
 
         if(t == "CLAIM"){
           playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]laimed [A-Za-z.' -]+ [$]") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]laimed ") %>% stringr::str_remove(' \\$')
           transactionDetail <- transDetails %>% stringr::str_extract('\\$\\d+')
         } else if(t == "ADD") {
-          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Aa]dded [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Aa]dded ") %>% stringr::str_remove(' \\d+$')
+          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Aa]dded [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Aa]dded ") %>% stringr::str_remove(' \\d+$') %>% stringr::str_remove( ' [A-Z][a-z]{2}$')
           transactionDetail <- ""
         } else {
-          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]ut [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]ut ") %>% stringr::str_remove(' \\d+$')
+          playerName <- transDetails %>% stringr::str_extract("^[A-Za-z0-9(),' ]+ [Cc]ut [A-Za-z.' -]+ \\d+") %>% stringr::str_remove("^[A-Za-z0-9(),' ]+ [Cc]ut ") %>% stringr::str_remove(' \\d+$') %>% stringr::str_remove( ' [A-Z][a-z]{2}$')
           transactionDetail <- ""
         }
         transData <- rbind(transData, data.frame(transactionDate = transactionDates, transType = t, teamID = id, playerName, transactionDetail))
@@ -84,7 +60,7 @@ getTransactions <- function(transLogLink, leagueLink, transType = 'ALL', team = 
     }
   }
 
-  return(transData)
+  return(transData %>% arrange(desc(transactionDate), teamID))
 
 }
 
@@ -105,7 +81,7 @@ getTrades <- function(tradesLink){
 
   while(length(tradeDetails) > 0){
     heading <- trades %>% rvest::html_nodes(".list-group-item-heading") %>% rvest::html_text() %>% stringr::str_remove(" Complete")
-    transactionDates <- tradeDetails %>% rvest::html_nodes(".relative-date") %>% rvest::html_attr("title") %>% as.POSIXct(format="%a %m/%d/%y %I:%M %p")
+    transactionDates <- tradeDetails %>% rvest::html_nodes("relative-time") %>% rvest::html_text() %>% as.POSIXct(format="%a %m/%d/%y %I:%M %p")
     vetoes <- tradeDetails %>% rvest::html_nodes(".media-info") %>% rvest::html_text() %>% stringr::str_extract('\\d Vetoes') %>% stringr::str_extract('\\d') %>% as.integer()
     tradeLink <- tradeDetails %>% rvest::html_nodes(".btn-xs")
     tradeLink <- paste0("https://www.fleaflicker.com",tradeLink[which(grepl("trades",tradeLink))] %>% rvest::html_attr("href"))
